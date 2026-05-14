@@ -1,0 +1,16 @@
+services:
+
+  django:
+    build:
+      context: .
+      dockerfile: docker/django/Dockerfile
+
+    container_name: ai_lawyer_django
+
+    volumes:
+      - ./backend:/app
+
+    ports:
+      - "8000:8000"
+
+    command: python manage.py runserver 0.0.0.0:8000
