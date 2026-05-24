@@ -5,3 +5,4 @@ qdrant-client>=1.18.0
 djangorestframework>=3.17.1
 pillow>=12.2.0
 djangorestframework-simplejwt
+python-magic>=0.4.27
