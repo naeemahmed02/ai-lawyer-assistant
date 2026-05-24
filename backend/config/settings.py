@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'chat',
     'cases',
     'accounts',
+    'documents',
     
     # THIRD-PARTY APPS
     'rest_framework',
