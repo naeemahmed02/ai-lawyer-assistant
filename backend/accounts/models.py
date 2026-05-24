@@ -118,10 +118,8 @@ class CustomAccountManager(BaseUserManager):
         )
 
 
-# -------------------------------------------------------------------
-# User Roles
-# -------------------------------------------------------------------
 
+# User Roles
 ROLE_CHOICES = (
     ("owner", "Owner"),
     ("senior_lawyer", "Senior Lawyer"),
@@ -144,10 +142,7 @@ class Account(AbstractBaseUser, PermissionsMixin):
         editable=False,
     )
 
-    # -------------------------------------------------------------------
     # Personal Information
-    # -------------------------------------------------------------------
-
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
 
@@ -174,18 +169,12 @@ class Account(AbstractBaseUser, PermissionsMixin):
         default="viewer",
     )
 
-    # -------------------------------------------------------------------
     # Permission Flags
-    # -------------------------------------------------------------------
-
     is_active = models.BooleanField(default=True)
 
     is_staff = models.BooleanField(default=False)
-
-    # -------------------------------------------------------------------
+    
     # Timestamps
-    # -------------------------------------------------------------------
-
     date_joined = models.DateTimeField(default=timezone.now)
 
     last_login = models.DateTimeField(
@@ -193,10 +182,7 @@ class Account(AbstractBaseUser, PermissionsMixin):
         blank=True,
     )
 
-    # -------------------------------------------------------------------
     # Authentication Configuration
-    # -------------------------------------------------------------------
-
     USERNAME_FIELD = "email"
 
     REQUIRED_FIELDS = [
@@ -229,7 +215,8 @@ class Account(AbstractBaseUser, PermissionsMixin):
         Return the user's full name.
         """
         return f"{self.first_name} {self.last_name}".strip()
-
+    
+    @property
     def get_short_name(self) -> str:
         """
         Return the user's short name.
