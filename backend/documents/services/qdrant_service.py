@@ -51,4 +51,62 @@ class QdrantService:
                     distance = Distance.COSINE
                 )
             )
+            
+    # Upsert (Batch Optimized)
+    def upsert_chunks(
+        self,
+        embeddings: List[List[float]],
+        chunks: List[str],
+        metadata_list: List[Dict[str, Any]]
         
+    ):
+        """Batch insert embeddings into Qdrant"""
+        
+        points = []
+        
+        for emb, chunk, meta in zip(embeddings, chunks, metadata_list):
+            
+            point_id = meta.get("chunk_id", str(uuid.uuid4))
+            
+            payload = {
+                "text": chunk,
+                **meta
+            }
+            
+            points.append(PointStruct(
+                id = point_id,
+                vector=emb,
+                payload = payload
+            ))
+            
+        self.client.upsert(
+            collection_name=self.collection_name,
+            points = points
+        )
+        
+    # Basic Search
+    def seach(
+        self,
+        query_vector: List[float],
+        limit: int = 5,
+        score_threshold: float = 0.5,
+        query_filter = Optional[Filter] = None
+    ):
+        """Semantic search with optional filtering."""
+        
+        return self.client.search(
+            collection_name=self.collection_name,
+            query_vector = query_vector,
+            limit = limit,
+            score = score_threshold,
+            query_filter = query_filter
+            
+        )
+        
+    
+    # Advanced filter builder
+    def build_filter(
+        self,
+        case_id: Optional[str] = None,
+        document_type: Optional[str] = None
+    )
