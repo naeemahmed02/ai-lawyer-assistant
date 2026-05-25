@@ -109,4 +109,72 @@ class QdrantService:
         self,
         case_id: Optional[str] = None,
         document_type: Optional[str] = None
-    )
+    ) -> Optional[Filter]:
+        must_conditions = []
+        
+        if case_id:
+            must_conditions.append(
+                FieldCondition(
+                    key = 'case_id',
+                    match = MatchValue(value = case_id)
+                )
+            )
+            
+        if document_type:
+            must_conditions.append(
+                FieldCondition(
+                    key = "document_type",
+                    match = MatchValue(value = document_type)
+                )
+            )
+            
+        if not must_conditions:
+            return None
+        
+        return Filter(must=must_conditions)
+    
+    # Filtered search
+    def search_with_filter(
+        self,
+        query_vector:List[float],
+        case_id: Optional[str] = None,
+        document_type: Optional[str] = None,
+        limit: int = 5,
+        score_threshold: float = 0.5
+    ):
+        """
+        Hybird semantic + metadata search
+        """
+        
+        query_filter = self.build_filter(
+            case_id = case_id,
+            document_type=document_type,
+        )
+        
+        return self.search(
+            query_vector = query_vector,
+            limit = limit,
+            score_threshold = score_threshold,
+            query_filter = query_filter
+        )
+        
+        
+    def delete_by_case(self, case_id: str):
+        """
+        Deletes all vectors for a case.
+        """
+
+        self.client.delete(
+            collection_name=self.collection_name,
+            points_selector=FilterSelector(
+                filter=Filter(
+                    must=[
+                        FieldCondition(
+                            key="case_id",
+                            match=MatchValue(value=case_id)
+                        )
+                    ]
+                )
+            )
+        )
+        
