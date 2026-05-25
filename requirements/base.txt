@@ -7,3 +7,4 @@ pillow>=12.2.0
 djangorestframework-simplejwt
 python-magic>=0.4.27
 puremagic>=2.2.0
+docling>=2.95.0

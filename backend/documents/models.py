@@ -65,9 +65,7 @@ class Document(models.Model):
     )
 
     file = models.FileField(
-        upload_to="documents/%Y/%m/%d/",
-        null=True,
-        blank=True,
+        upload_to="docs/documents/%Y/%m/%d/",
         help_text=_("Original uploaded legal document file."),
     )
 
