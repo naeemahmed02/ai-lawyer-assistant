@@ -6,7 +6,6 @@ from qdrant_client.models import (
     Filter,
     FieldCondition,
     MatchValue,
-    Range,
     FilterSelector
 )
 
