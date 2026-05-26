@@ -1,0 +1,114 @@
+.
+├── __init__.py
+├── __pycache__
+│   └── __init__.cpython-312.pyc
+├── accounts
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── api
+│   │   ├── __init__.py
+│   │   ├── serializers.py
+│   │   ├── urls.py
+│   │   └── views.py
+│   ├── apps.py
+│   ├── migrations
+│   │   ├── 0001_initial.py
+│   │   └── __init__.py
+│   ├── models.py
+│   ├── tests.py
+│   └── views.py
+├── cases
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── apps.py
+│   ├── migrations
+│   │   └── __init__.py
+│   ├── models.py
+│   ├── tests.py
+│   └── views.py
+├── chat
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── apps.py
+│   ├── migrations
+│   │   └── __init__.py
+│   ├── models.py
+│   ├── tests.py
+│   └── views.py
+├── config
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-312.pyc
+│   │   └── settings.cpython-312.pyc
+│   ├── asgi.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+├── db.sqlite3
+├── docs
+│   └── documents
+│       └── 2026
+│           └── 05
+│               └── 25
+├── documents
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-312.pyc
+│   │   └── models.cpython-312.pyc
+│   ├── admin.py
+│   ├── api
+│   │   ├── __init__.py
+│   │   ├── serializers.py
+│   │   ├── urls.py
+│   │   └── views.py
+│   ├── apps.py
+│   ├── migrations
+│   │   ├── 0001_initial.py
+│   │   ├── 0002_alter_document_file.py
+│   │   ├── 0003_alter_document_file.py
+│   │   ├── 0004_alter_document_file.py
+│   │   ├── 0005_alter_document_file.py
+│   │   └── __init__.py
+│   ├── models.py
+│   ├── services
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-312.pyc
+│   │   │   └── test.cpython-312.pyc
+│   │   ├── chunking
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   │   ├── __init__.cpython-312.pyc
+│   │   │   │   └── document_chunker.cpython-312.pyc
+│   │   │   └── document_chunker.py
+│   │   ├── embeddings
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   │   ├── __init__.cpython-312.pyc
+│   │   │   │   └── embedding_engine.cpython-312.pyc
+│   │   │   └── embedding_engine.py
+│   │   ├── extraction
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   │   ├── __init__.cpython-312.pyc
+│   │   │   │   └── extractor.cpython-312.pyc
+│   │   │   └── extractor.py
+│   │   ├── ingestion
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   │   ├── __init__.cpython-312.pyc
+│   │   │   │   └── ingestion_pipeline.cpython-312.pyc
+│   │   │   └── ingestion_pipeline.py
+│   │   ├── test.py
+│   │   └── vectorstore
+│   │       ├── __init__.py
+│   │       ├── __pycache__
+│   │       │   ├── __init__.cpython-312.pyc
+│   │       │   └── qdrant_service.cpython-312.pyc
+│   │       └── qdrant_service.py
+│   ├── tests.py
+│   └── views.py
+├── manage.py
+└── project_tree.txt
+
+32 directories, 80 files

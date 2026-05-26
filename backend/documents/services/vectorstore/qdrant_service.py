@@ -21,13 +21,15 @@ class QdrantService:
     
     def __init__(
         self,
-        host: str = 'qdrant',
-        port: int = 6333,
+        # host: str = 'qdrant',
+        # port: int = 6333,
+        host="localhost",
+        port=6333,
         collection_name: str = 'legal_chunks',
         vector_size: int = 384
     ):
         self.client = QdrantClient(host=host, port=port)
-        self.collection_name = collection_name,
+        self.collection_name = collection_name
         self.vector_size = vector_size
         
         self._ensure_collection()
@@ -45,7 +47,7 @@ class QdrantService:
         if self.collection_name not in existing:
             self.client.create_collection(
                 collection_name = self.collection_name,
-                vector_config = VectorParams(
+                vectors_config = VectorParams(
                     size = self.vector_size,
                     distance = Distance.COSINE
                 )
@@ -84,12 +86,12 @@ class QdrantService:
         )
         
     # Basic Search
-    def seach(
+    def search(
         self,
         query_vector: List[float],
         limit: int = 5,
         score_threshold: float = 0.5,
-        query_filter = Optional[Filter] = None
+        query_filter: Optional[Filter] = None
     ):
         """Semantic search with optional filtering."""
         
@@ -97,7 +99,7 @@ class QdrantService:
             collection_name=self.collection_name,
             query_vector = query_vector,
             limit = limit,
-            score = score_threshold,
+            score_threshold=score_threshold,
             query_filter = query_filter
             
         )
