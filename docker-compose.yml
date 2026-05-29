@@ -14,3 +14,29 @@ services:
       - "8000:8000"
 
     command: python manage.py runserver 0.0.0.0:8000
+
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+
+    container_name: ai_lawyer_redis
+
+    ports:
+      - "6379:6379"
+
+  celery:
+    build:
+      context: .
+      dockerfile: docker/django/Dockerfile
+
+    container_name: ai_lawyer_celery
+
+    volumes:
+      - ./backend:/app
+
+    command: celery -A config worker -l info
+
+    depends_on:
+      - redis

@@ -1,6 +1,6 @@
 from celery import shared_task
 
-from backend.documents.services.ingestion.ingestion_pipeline import DocumentIngestionPipeline
+from documents.services.ingestion.ingestion_pipeline import DocumentIngestionPipeline
 
 @shared_task
 def process_document_task(document_id: str):
