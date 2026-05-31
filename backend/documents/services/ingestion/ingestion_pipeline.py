@@ -25,9 +25,7 @@ class DocumentIngestionPipeline:
         document = None
 
         try:
-            # -------------------------
             # FETCH DOCUMENT
-            # -------------------------
             document = get_object_or_404(Document, id=document_id)
 
             if document.processing_status == Document.ProcessingStatus.COMPLETED:
@@ -42,18 +40,14 @@ class DocumentIngestionPipeline:
 
             logger.info(f"Pipeline started document={document.id}")
 
-            # -------------------------
             # CALL RUNTIME (ALL HEAVY WORK)
-            # -------------------------
             from .runtime import IngestionRuntime  # lazy import
 
             runtime = IngestionRuntime()
 
             result = runtime.process(document)
 
-            # -------------------------
             # FINALIZE STATE
-            # -------------------------
             with transaction.atomic():
                 document.processing_status = Document.ProcessingStatus.COMPLETED
                 document.is_vectorized = True

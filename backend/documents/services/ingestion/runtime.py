@@ -22,45 +22,35 @@ class IngestionRuntime:
         self._embedding_engine = None
         self._qdrant = None
 
-    # -----------------------------
     # DOC EXTRACTION (LAZY)
-    # -----------------------------
     def _get_extractor(self):
         if self._extractor is None:
             from ..extraction.extractor import DocConverter
             self._extractor = DocConverter()
         return self._extractor
 
-    # -----------------------------
     # CHUNKING (LAZY)
-    # -----------------------------
     def _get_chunker(self):
         if self._chunker is None:
             from ..chunking.document_chunker import SemanticChunking
             self._chunker = SemanticChunking()
         return self._chunker
 
-    # -----------------------------
     # EMBEDDINGS (LAZY)
-    # -----------------------------
     def _get_embedding_engine(self):
         if self._embedding_engine is None:
             from ..embeddings.embedding_engine import EmbeddingEngine
             self._embedding_engine = EmbeddingEngine()
         return self._embedding_engine
 
-    # -----------------------------
     # VECTOR STORE (LAZY)
-    # -----------------------------
     def _get_qdrant(self):
         if self._qdrant is None:
             from ..vectorstore.qdrant_service import QdrantService
             self._qdrant = QdrantService()
         return self._qdrant
 
-    # -----------------------------
     # MAIN PROCESS
-    # -----------------------------
     def process(self, document) -> Dict[str, Any]:
 
         # 1. Extraction

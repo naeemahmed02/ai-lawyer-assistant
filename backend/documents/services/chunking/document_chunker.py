@@ -29,9 +29,7 @@ class SemanticChunking:
 
         self._model = None
 
-    # -----------------------------
     # LAZY MODEL LOADING (CRITICAL)
-    # -----------------------------
     def _get_model(self):
         if self._model is None:
             try:
@@ -52,9 +50,7 @@ class SemanticChunking:
 
         return self._model
 
-    # -----------------------------
     # TEXT PREPROCESSING
-    # -----------------------------
     def _split_sentences(self, text: str) -> List[str]:
         if not text:
             return []
@@ -67,9 +63,7 @@ class SemanticChunking:
 
         return sentences
 
-    # -----------------------------
     # MAIN CHUNKING LOGIC
-    # -----------------------------
     def semantic_chunking(self, text: str) -> List[str]:
         sentences = self._split_sentences(text)
 
@@ -79,9 +73,7 @@ class SemanticChunking:
         model = self._get_model()
 
         try:
-            # -----------------------------
             # EMBEDDINGS (OPTIMIZED)
-            # -----------------------------
             embeddings = model.encode(
                 sentences,
                 batch_size=32,
@@ -95,9 +87,7 @@ class SemanticChunking:
             logger.exception("Embedding generation failed")
             raise RuntimeError(f"Embedding failed: {e}")
 
-        # -----------------------------
         # SEMANTIC GROUPING
-        # -----------------------------
         chunks: List[str] = []
         current_chunk = [sentences[0]]
 
