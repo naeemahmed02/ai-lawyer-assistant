@@ -19,7 +19,7 @@ urlpatterns = [
     # apps
     path('accounts/', include('accounts.api.urls')),
     path('documents/', include('documents.api.urls')),
-    path('chat/', include('chat.api.urls')),
+    # path('chat/', include('chat.api.urls')),
 ]
 
 if settings.DEBUG:
