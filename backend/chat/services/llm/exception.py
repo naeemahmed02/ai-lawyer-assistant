@@ -28,3 +28,7 @@ class ProviderResponseError(LLMException):
 
 class LLMGenerationError(LLMException):
     """Generation failed after retries."""
+
+
+class PromptBuilderError(Exception):
+    """Raised when prompt construction fails."""
