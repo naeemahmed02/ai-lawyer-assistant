@@ -9,6 +9,8 @@ class Conversation(models.Model):
     
     title = models.CharField(max_length=400, blank=True)
     
+    model_name = models.CharField(max_length=100, default="gemini-2.5-flash")
+    
     summary = models.JSONField(default=dict, blank=True, null=True)
     
     created_at = models.DateTimeField(
