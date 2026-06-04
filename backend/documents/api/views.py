@@ -16,7 +16,7 @@ class DocumentViewSet(ModelViewSet):
 
     def get_queryset(self) -> QuerySet[Document]:
         return Document.objects.filter(owner=self.request.user).all()
-    
+
     def perform_create(self, serializer):
         """
         Save document and trigger async ingestion pipeline.

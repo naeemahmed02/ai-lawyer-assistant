@@ -62,4 +62,8 @@ class ConversationSerializers(serializers.ModelSerializer):
 
     def create(self, validated_data):
         request = self.context.get("request")
+
+        # Remove 'owner' from validated_data if it exists to avoid the duplicate argument error
+        validated_data.pop("owner", None)
+
         return Conversation.objects.create(owner=request.user, **validated_data)

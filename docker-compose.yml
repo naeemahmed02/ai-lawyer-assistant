@@ -5,12 +5,14 @@ services:
     build:
       context: .
       dockerfile: docker/django/Dockerfile
+    env_file:
+      - .env
     container_name: ai_lawyer_django
 
     volumes:
       - ./backend:/app
       - media_data:/app/media
-      - model_cache:/models   # shared ML cache
+      - model_cache:/models # shared ML cache
 
     ports:
       - "8000:8000"
@@ -35,7 +37,6 @@ services:
     networks:
       - ai_net
 
-
   celery:
     build:
       context: .
@@ -45,7 +46,7 @@ services:
     volumes:
       - ./backend:/app
       - media_data:/app/media
-      - model_cache:/models   # shared cache with django
+      - model_cache:/models # shared cache with django
 
     command: celery -A config worker -l info --concurrency=4
 
@@ -63,11 +64,9 @@ services:
     depends_on:
       - redis
       - qdrant
-      - django
 
     networks:
       - ai_net
-
 
   redis:
     image: redis:7-alpine
@@ -76,7 +75,6 @@ services:
       - "6379:6379"
     networks:
       - ai_net
-
 
   qdrant:
     image: qdrant/qdrant:latest
@@ -88,13 +86,11 @@ services:
     networks:
       - ai_net
 
-
 networks:
   ai_net:
     driver: bridge
 
-
 volumes:
   qdrant_data:
   media_data:
-  model_cache:   # persistent ML model storage
+  model_cache: # persistent ML model storage
