@@ -9,16 +9,15 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-
+    path("admin/", admin.site.urls),
     # JWT
-    path('api/token/', TokenObtainPairView.as_view()),
-    path('api/token/refresh/', TokenRefreshView.as_view()),
-    path('api/token/verify/', TokenVerifyView.as_view()),
-
+    path("api/token/", TokenObtainPairView.as_view()),
+    path("api/token/refresh/", TokenRefreshView.as_view()),
+    path("api/token/verify/", TokenVerifyView.as_view()),
     # apps
-    path('accounts/', include('accounts.api.urls')),
-    path('documents/', include('documents.api.urls')),
+    path("accounts/", include("accounts.api.urls")),
+    path("documents/", include("documents.api.urls")),
+    path("chat/", include("chat.api.urls")),
 ]
 
 if settings.DEBUG:
