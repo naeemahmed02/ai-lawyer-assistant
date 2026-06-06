@@ -1,12 +1,14 @@
 import logging
 from typing import Optional, List
 import asyncio
+from .builders.context_builder import ContextBuilder
 from documents.services.vectorstore.qdrant_service import QdrantService
 from documents.services.embeddings.embedding_engine import EmbeddingEngine
 
 from ..llm.service import LLMService
 from ..llm.builders.prompt_builder import PromptBuilder
 from dataclasses import asdict
+from .prompts.system_prompt import system_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -40,38 +42,11 @@ class RAGPipeline:
         )
 
         self.prompt_builder = PromptBuilder()
+        self.context_builder = ContextBuilder()
 
         self.llm_service = LLMService()
 
-    # --------------------------------------------------
-    # Context Builder
-    # --------------------------------------------------
-
-    def _build_context(self, search_results) -> str:
-        """
-        Convert Qdrant results into prompt context.
-        """
-
-        if not search_results:
-            return ""
-
-        chunks: List[str] = []
-
-        for point in search_results:
-
-            payload = point.payload or {}
-
-            text = payload.get("text")
-
-            if text:
-                chunks.append(text)
-
-        return "\n\n".join(chunks)
-
-    # --------------------------------------------------
     # Main RAG Entry
-    # --------------------------------------------------
-
     async def run(
         self,
         query: str,
@@ -87,10 +62,7 @@ class RAGPipeline:
         )
 
         try:
-            # ------------------------------------------
             # Embed Query
-            # ------------------------------------------
-
             query_vector = self.embedding_engine.embed(query)
             print("EMBED TYPE:", type(query_vector))
 
@@ -99,10 +71,7 @@ class RAGPipeline:
                 len(query_vector),
             )
 
-            # ------------------------------------------
             # Retrieve Relevant Chunks
-            # ------------------------------------------
-
             search_results = self.qdrant_service.search_with_filter(
                 query_vector=query_vector,
                 case_id=case_id,
@@ -115,36 +84,20 @@ class RAGPipeline:
                 len(search_results),
             )
 
-            # ------------------------------------------
             # Build Context
-            # ------------------------------------------
+            context = self.context_builder._build_context(search_results)
 
-            context = self._build_context(search_results)
-
-            # ------------------------------------------
             # Build Prompt
-            # ------------------------------------------
-
-            system_prompt = """
-You are a legal AI assistant.
-
-Answer the user's question using ONLY the provided legal context.
-
-If the answer is not contained in the context,
-say that the information is unavailable.
-
-Be precise and cite relevant facts from the context.
-"""
 
             user_message = f"""
-Context:
+                Context:
 
-{context}
+                {context}
 
-Question:
+                Question:
 
-{query}
-"""
+                {query}
+            """
 
             prompt = self.prompt_builder.build(
                 system_prompt=system_prompt,
@@ -152,14 +105,7 @@ Question:
                 history=None,
             )
 
-            # ------------------------------------------
             # Generate Answer
-            # ------------------------------------------
-
-            # answer = self.llm_service.generate(
-            #     messages=prompt,
-            #     model_name="gemini-2.5-flash",
-            # )
             answer = await self.llm_service.generate(
                 messages=prompt,
                 model_name="gemini-2.5-flash",
