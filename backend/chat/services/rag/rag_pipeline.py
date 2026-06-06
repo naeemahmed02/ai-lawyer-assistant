@@ -1,6 +1,5 @@
 import logging
-from typing import Optional, List
-import asyncio
+from typing import Optional
 from .builders.context_builder import ContextBuilder
 from documents.services.vectorstore.qdrant_service import QdrantService
 from documents.services.embeddings.embedding_engine import EmbeddingEngine
@@ -9,26 +8,42 @@ from ..llm.service import LLMService
 from ..llm.builders.prompt_builder import PromptBuilder
 from dataclasses import asdict
 from .prompts.system_prompt import system_prompt
+from .builders.citation_builder import CitationBuilder
 
 logger = logging.getLogger(__name__)
 
 
 class RAGPipeline:
     """
-    Production-ready Legal RAG Pipeline.
+    Production-grade Retrieval-Augmented Generation (RAG) pipeline for
+    legal research and question-answering applications.
 
-    Flow:
-    User Query
-        ↓
-    Gemini Embedding
-        ↓
-    Qdrant Retrieval
-        ↓
-    Context Construction
-        ↓
-    Prompt Building
-        ↓
-    Gemini Generation
+    The pipeline retrieves relevant legal documents from a vector database,
+    constructs grounded context, and generates accurate responses using
+    Gemini models. It is designed to provide traceable, context-aware,
+    and citation-friendly answers while minimizing hallucinations.
+
+    Key capabilities:
+        - Semantic search using Gemini embeddings.
+        - Legal document retrieval from Qdrant.
+        - Context aggregation and prompt optimization.
+        - Gemini-powered answer generation.
+        - Source attribution and citation support.
+        - Configurable retrieval and generation settings.
+        - Robust error handling, logging, and observability.
+
+    Attributes:
+        embedding_model: Embedding model used for query vectorization.
+        vector_store: Qdrant client for document retrieval.
+        llm: Gemini language model used for response generation.
+        retriever: Retrieval component responsible for document search.
+        prompt_builder: Utility for constructing generation prompts.
+        config: Runtime configuration for the pipeline.
+
+    Notes:
+        This pipeline is intended for legal assistance and research
+        workflows. Generated responses should be reviewed against
+        authoritative legal sources before professional use.
     """
 
     def __init__(self):
@@ -43,10 +58,11 @@ class RAGPipeline:
 
         self.prompt_builder = PromptBuilder()
         self.context_builder = ContextBuilder()
+        self.citation_builder = CitationBuilder()
 
         self.llm_service = LLMService()
 
-    # Main RAG Entry
+    # Main rag entry
     async def run(
         self,
         query: str,
@@ -88,7 +104,6 @@ class RAGPipeline:
             context = self.context_builder._build_context(search_results)
 
             # Build Prompt
-
             user_message = f"""
                 Context:
 
@@ -112,9 +127,13 @@ class RAGPipeline:
             )
             print("ANSWER TYPE:", type(answer))
 
+            # build citations
+            citations = self.citation_builder.build(search_results)
+
             return {
                 "query": query,
                 "answer": asdict(answer),
+                "citations": citations,
                 "retrieved_chunks": len(search_results),
             }
 
