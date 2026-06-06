@@ -8,6 +8,8 @@ from ..models.message import Message
 from .serializers.message_serializers import MessageSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from asgiref.sync import async_to_sync
+from ..services.llm.exception import LLMGenerationError
 
 logger = logging.getLogger(__name__)
 
@@ -17,17 +19,35 @@ class LegalChatAPIView(APIView):
 
     def post(self, request):
         from ..services.rag.rag_pipeline import RAGPipeline
-        # get the query
+        
         query = request.data.get("query")
-
         case_id = request.data.get("case_id")
+
+        if not query or not query.strip():
+            return Response({"error": "Query cannot be empty."}, status=status.HTTP_400_BAD_REQUEST)
 
         rag_pipeline = RAGPipeline()
 
-        response = rag_pipeline.run(query)
+        try:
+            # Safely bridge the synchronous view to your async pipeline execution
+            response = async_to_sync(rag_pipeline.run)(query, case_id=case_id)
+            return Response(response, status=status.HTTP_200_OK)
 
-        return Response(response)
-
+        except LLMGenerationError as e:
+            logger.error(f"Handled LLM Failure in View: {e}")
+            return Response(
+                {
+                    "error": "The upstream AI generation provider failed.",
+                    "details": str(e)
+                }, 
+                status=status.HTTP_502_BAD_GATEWAY
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error in pipeline: {e}")
+            return Response(
+                {"error": "An unexpected error occurred while processing your request."}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class CoversationViewSet(viewsets.ModelViewSet):
 

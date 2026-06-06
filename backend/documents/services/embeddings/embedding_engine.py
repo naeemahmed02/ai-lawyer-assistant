@@ -93,20 +93,12 @@
 #     print(f"First 10 values: {embedding[:10]}")
 
 
-
-
-
-
-
-
-
 from __future__ import annotations
 
 import logging
 from typing import List, Optional
-
-from google import genai
 from google.genai import types
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -135,13 +127,12 @@ class EmbeddingEngine:
         self.model_name = model_name
         self.output_dimensionality = output_dimensionality
 
-        self.client = None
-        
     @property
     def client(self):
         if not hasattr(self, "_client"):
             from google import genai
-            self._client = genai.Client()
+
+            self._client = genai.Client(api_key=settings.GOOGLE_API_KEY)
         return self._client
 
     def _embedding_config(self):
@@ -177,9 +168,7 @@ class EmbeddingEngine:
 
         except Exception as exc:
             logger.exception("Embedding generation failed.")
-            raise RuntimeError(
-                f"Failed generating embedding: {exc}"
-            ) from exc
+            raise RuntimeError(f"Failed generating embedding: {exc}") from exc
 
     def embed_batch(self, texts: List[str]) -> List[List[float]]:
         """
@@ -199,16 +188,11 @@ class EmbeddingEngine:
                 config=self._embedding_config(),
             )
 
-            return [
-                embedding.values
-                for embedding in response.embeddings
-            ]
+            return [embedding.values for embedding in response.embeddings]
 
         except Exception as exc:
             logger.exception("Batch embedding generation failed.")
-            raise RuntimeError(
-                f"Failed generating batch embeddings: {exc}"
-            ) from exc
+            raise RuntimeError(f"Failed generating batch embeddings: {exc}") from exc
 
     def embedding_dimension(self) -> int:
         """

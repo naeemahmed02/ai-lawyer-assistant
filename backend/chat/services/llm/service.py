@@ -31,15 +31,14 @@ class LLMService:
                     },
                 )
 
-                response = await provider.generate(
-                    model=model_name, messages=messages, **kwargs
-                )
+                response = provider.generate(model=model_name, messages=messages, **kwargs)
 
                 logger.info("llm_success", extra={"model": model_name})
 
                 return response
 
-            except Exception:
+            # ... inside LLMService.generate loops ...
+            except Exception as e: # <-- Catch the actual error object
                 logger.exception(
                     "llm_failure",
                     extra={
@@ -49,6 +48,7 @@ class LLMService:
                 )
 
                 if attempt == self.MAX_RETRIES - 1:
-                    raise LLMGenerationError(f"Generation failed model: {model_name}")
+                    # 'from e' links the original exception traceback to your custom error
+                    raise LLMGenerationError(f"Generation failed model: {model_name}. Reason: {str(e)}") from e
 
                 await asyncio.sleep(2**attempt)

@@ -1,11 +1,12 @@
 import logging
 from typing import Optional, List
-
+import asyncio
 from documents.services.vectorstore.qdrant_service import QdrantService
 from documents.services.embeddings.embedding_engine import EmbeddingEngine
 
 from ..llm.service import LLMService
 from ..llm.builders.prompt_builder import PromptBuilder
+from dataclasses import asdict
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +72,7 @@ class RAGPipeline:
     # Main RAG Entry
     # --------------------------------------------------
 
-    def run(
+    async def run(
         self,
         query: str,
         case_id: Optional[str] = None,
@@ -90,9 +91,8 @@ class RAGPipeline:
             # Embed Query
             # ------------------------------------------
 
-            query_vector = self.embedding_engine.embed(
-                query
-            )
+            query_vector = self.embedding_engine.embed(query)
+            print("EMBED TYPE:", type(query_vector))
 
             logger.debug(
                 "Generated query embedding (%s dimensions)",
@@ -103,13 +103,12 @@ class RAGPipeline:
             # Retrieve Relevant Chunks
             # ------------------------------------------
 
-            search_results = (
-                self.qdrant_service.search_with_filter(
-                    query_vector=query_vector,
-                    case_id=case_id,
-                    limit=5,
-                )
+            search_results = self.qdrant_service.search_with_filter(
+                query_vector=query_vector,
+                case_id=case_id,
+                limit=5,
             )
+            print("QDRANT TYPE:", type(search_results))
 
             logger.info(
                 "Retrieved %s chunks",
@@ -120,9 +119,7 @@ class RAGPipeline:
             # Build Context
             # ------------------------------------------
 
-            context = self._build_context(
-                search_results
-            )
+            context = self._build_context(search_results)
 
             # ------------------------------------------
             # Build Prompt
@@ -159,23 +156,22 @@ Question:
             # Generate Answer
             # ------------------------------------------
 
-            answer = self.llm_service.generate(
+            # answer = self.llm_service.generate(
+            #     messages=prompt,
+            #     model_name="gemini-2.5-flash",
+            # )
+            answer = await self.llm_service.generate(
                 messages=prompt,
                 model_name="gemini-2.5-flash",
             )
-
-            # ------------------------------------------
-            # Return Structured Result
-            # ------------------------------------------
+            print("ANSWER TYPE:", type(answer))
 
             return {
                 "query": query,
-                "answer": answer,
+                "answer": asdict(answer),
                 "retrieved_chunks": len(search_results),
             }
 
         except Exception:
-            logger.exception(
-                "RAG pipeline execution failed."
-            )
+            logger.exception("RAG pipeline execution failed.")
             raise
