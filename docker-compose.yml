@@ -48,7 +48,7 @@ services:
       - media_data:/app/media
       - model_cache:/models # shared cache with django
 
-    command: celery -A config worker -l info --concurrency=4
+    command: celery -A config worker -l info --concurrency=1
 
     environment:
       PYTHONPATH: /app

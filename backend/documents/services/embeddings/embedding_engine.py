@@ -1,98 +1,3 @@
-# import torch
-# import numpy as np
-# import torch.nn.functional as F
-# from transformers import AutoTokenizer, AutoModel
-# from typing import List
-
-
-# class EmbeddingEngine:
-#     """
-#     Embedding service for RAG + Qdrant.
-#     """
-
-#     def __init__(
-#         self,
-#         model_name: str = "BAAI/bge-small-en",
-#         max_length: int = 512,
-#         normalize: bool = True,
-#     ):
-#         self.model_name = model_name
-#         self.max_length = max_length
-#         self.normalize = normalize
-
-#         # Device setup (GPU if available)
-#         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-#         # Load model + tokenizer
-#         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-#         self.model = AutoModel.from_pretrained(model_name).to(self.device)
-
-#         self.model.eval()
-
-#     # Internal pooling
-#     def _mean_pooling(self, token_embeddings, attention_mask):
-#         mask = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-#         summed = torch.sum(token_embeddings * mask, dim=1)
-#         counts = torch.clamp(mask.sum(dim=1), min=1e-9)
-#         return summed / counts
-
-#     # Single text embedding
-#     def embed(self, text: str) -> List[float]:
-#         inputs = self.tokenizer(
-#             text,
-#             padding=True,
-#             truncation=True,
-#             max_length=self.max_length,
-#             return_tensors="pt",
-#         ).to(self.device)
-
-#         with torch.no_grad():
-#             outputs = self.model(**inputs)
-
-#         embeddings = self._mean_pooling(
-#             outputs.last_hidden_state, inputs["attention_mask"]
-#         )
-
-#         if self.normalize:
-#             embeddings = F.normalize(embeddings, p=2, dim=1)
-
-#         return embeddings.squeeze(0).cpu().numpy().tolist()
-
-#     # Batch embedding
-#     def embed_batch(self, texts: List[str]) -> List[List[float]]:
-#         inputs = self.tokenizer(
-#             texts,
-#             padding=True,
-#             truncation=True,
-#             max_length=self.max_length,
-#             return_tensors="pt",
-#         ).to(self.device)
-
-#         with torch.no_grad():
-#             outputs = self.model(**inputs)
-
-#         embeddings = self._mean_pooling(
-#             outputs.last_hidden_state, inputs["attention_mask"]
-#         )
-
-#         if self.normalize:
-#             embeddings = F.normalize(embeddings, p=2, dim=1)
-
-#         return embeddings.cpu().numpy().tolist()
-
-
-# if __name__ == "__main__":
-#     engine = EmbeddingEngine()
-
-#     text = "Machine learning is amazing."
-
-#     embedding = engine.embed(text)
-
-#     print(f"Text: {text}")
-#     print(f"Embedding dimension: {len(embedding)}")
-#     print(f"First 10 values: {embedding[:10]}")
-
-
 from __future__ import annotations
 
 import logging
@@ -111,13 +16,10 @@ class EmbeddingEngine:
     - Qdrant
     - RAG pipelines
     - Semantic search
-
-    Notes:
-    - Ensure Qdrant collection dimension matches output_dimensionality.
-    - All indexed documents and queries must use the same model/config.
     """
 
     DEFAULT_MODEL = "gemini-embedding-001"
+    MAX_BATCH_SIZE = 96  # Safely under Google's strict 100-request limit
 
     def __init__(
         self,
@@ -148,22 +50,17 @@ class EmbeddingEngine:
 
     def embed(self, text: str) -> List[float]:
         """
-        Generate embedding for a single text.
-
-        Returns:
-            List[float]
+        Generate embedding for a single text string.
         """
-
         if not text or not text.strip():
             raise ValueError("Text cannot be empty.")
 
         try:
             response = self.client.models.embed_content(
                 model=self.model_name,
-                contents=text,
+                contents=text.strip(),
                 config=self._embedding_config(),
             )
-
             return response.embeddings[0].values
 
         except Exception as exc:
@@ -172,34 +69,52 @@ class EmbeddingEngine:
 
     def embed_batch(self, texts: List[str]) -> List[List[float]]:
         """
-        Generate embeddings for multiple texts.
-
-        Returns:
-            List[List[float]]
+        Generate embeddings for multiple texts, safely splitting them
+        into sub-batches to abide by the Gemini API limit of 100 requests per call.
         """
-
         if not texts:
             return []
 
-        try:
-            response = self.client.models.embed_content(
-                model=self.model_name,
-                contents=texts,
-                config=self._embedding_config(),
+        # Defensive step: Ensure no empty or pure whitespace blocks crash the API call
+        cleaned_texts = [t.strip() if (t and t.strip()) else "N/A" for t in texts]
+
+        all_embeddings: List[List[float]] = []
+        total_chunks = len(cleaned_texts)
+
+        # Loop through chunks in increments of 96
+        for i in range(0, total_chunks, self.MAX_BATCH_SIZE):
+            sub_batch = cleaned_texts[i : i + self.MAX_BATCH_SIZE]
+
+            logger.info(
+                f"Processing sub-batch {(i // self.MAX_BATCH_SIZE) + 1} "
+                f"for model {self.model_name} (Size: {len(sub_batch)})"
             )
 
-            return [embedding.values for embedding in response.embeddings]
+            try:
+                response = self.client.models.embed_content(
+                    model=self.model_name,
+                    contents=sub_batch,
+                    config=self._embedding_config(),
+                )
 
-        except Exception as exc:
-            logger.exception("Batch embedding generation failed.")
-            raise RuntimeError(f"Failed generating batch embeddings: {exc}") from exc
+                # Safely extract values out of the response structures
+                batch_vectors = [embedding.values for embedding in response.embeddings]
+                all_embeddings.extend(batch_vectors)
+
+            except Exception as exc:
+                logger.exception(
+                    f"Batch embedding sub-segment failed at chunk index range {i}:{i+self.MAX_BATCH_SIZE}"
+                )
+                raise RuntimeError(
+                    f"Failed generating batch embeddings subset: {exc}"
+                ) from exc
+
+        return all_embeddings
 
     def embedding_dimension(self) -> int:
         """
         Helper method to determine actual vector size.
-
-        Useful for creating Qdrant collections.
+        Useful for creating Qdrant collections dynamically.
         """
-
         vector = self.embed("dimension test")
         return len(vector)
