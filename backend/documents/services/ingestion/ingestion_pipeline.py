@@ -41,17 +41,41 @@ class DocumentIngestionPipeline:
             logger.info(f"Pipeline started document={document.id}")
 
             # CALL RUNTIME (ALL HEAVY WORK)
-            from .runtime import IngestionRuntime  # lazy import
+            from .runtime import IngestionRuntime
 
             runtime = IngestionRuntime()
 
             result = runtime.process(document)
 
+            # AI ANALYSIS
+            from documents.services.analysis.document_analysis_service import (
+                DocumentAnalysisService,
+            )
+
+            analysis_service = DocumentAnalysisService()
+
+            analysis = analysis_service.analyze(document)
+
+            # FINALIZE DOCUMENT DATA
+            document.summary = analysis["summary"]
+
+            document.keywords = {
+                "tags": analysis["tags"],
+            }
+
             # FINALIZE STATE
             with transaction.atomic():
                 document.processing_status = Document.ProcessingStatus.COMPLETED
                 document.is_vectorized = True
-                document.save(update_fields=["processing_status", "is_vectorized"])
+
+                document.save(
+                    update_fields=[
+                        "summary",
+                        "keywords",
+                        "processing_status",
+                        "is_vectorized",
+                    ]
+                )
 
             logger.info(f"Pipeline completed document={document.id}")
 

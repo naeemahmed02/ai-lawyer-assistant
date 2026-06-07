@@ -8,7 +8,7 @@ class MessageSerializer(serializers.ModelSerializer):
         model = Message
         fields = (
             "id",
-            "conversion",
+            "conversation",
             "role",
             "content",
             "token_count",
