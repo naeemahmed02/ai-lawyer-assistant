@@ -118,6 +118,8 @@ class RAGPipeline:
                 history=history,
             )
 
+            print(f"Prompt: {prompt}")
+
             # Generate Answer
             answer = await self.llm_service.generate(
                 messages=prompt,

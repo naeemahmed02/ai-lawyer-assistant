@@ -20,7 +20,7 @@ class GeminiAIProvider(BaseLLMProvider):
 
     def generate(self, messages, model, **kwargs):
         """
-        Synchronously generates content from the Gemini API to match 
+        Synchronously generates content from the Gemini API to match
         the synchronous Django view and RAG pipeline architectures.
         """
         try:
@@ -47,6 +47,10 @@ class GeminiAIProvider(BaseLLMProvider):
 
             # FIX: Explicit evaluation so other exceptions aren't swallowed as Auth errors
             if "api key" in error_message or "api_key" in error_message:
-                raise ProviderAuthenticationError(f"Invalid Google API Key configuration: {exc}") from exc
+                raise ProviderAuthenticationError(
+                    f"Invalid Google API Key configuration: {exc}"
+                ) from exc
 
-            raise ProviderConnectionError(f"Gemini API Connection failed: {exc}") from exc
+            raise ProviderConnectionError(
+                f"Gemini API Connection failed: {exc}"
+            ) from exc
