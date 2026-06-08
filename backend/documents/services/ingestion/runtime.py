@@ -26,6 +26,7 @@ class IngestionRuntime:
     def _get_extractor(self):
         if self._extractor is None:
             from ..extraction.extractor import DocConverter
+
             self._extractor = DocConverter()
         return self._extractor
 
@@ -33,6 +34,7 @@ class IngestionRuntime:
     def _get_chunker(self):
         if self._chunker is None:
             from ..chunking.document_chunker import SemanticChunking
+
             self._chunker = SemanticChunking()
         return self._chunker
 
@@ -40,6 +42,7 @@ class IngestionRuntime:
     def _get_embedding_engine(self):
         if self._embedding_engine is None:
             from ..embeddings.embedding_engine import EmbeddingEngine
+
             self._embedding_engine = EmbeddingEngine()
         return self._embedding_engine
 
@@ -47,6 +50,7 @@ class IngestionRuntime:
     def _get_qdrant(self):
         if self._qdrant is None:
             from ..vectorstore.qdrant_service import QdrantService
+
             self._qdrant = QdrantService()
         return self._qdrant
 
@@ -68,11 +72,13 @@ class IngestionRuntime:
         pages = getattr(raw_result.document, "pages", None)
         page_count = len(pages) if pages else 0
 
-        document.extracted_text = make_json_safe({
-            "text": raw_text,
-            "source": "docling",
-            "pages": page_count,
-        })
+        document.extracted_text = make_json_safe(
+            {
+                "text": raw_text,
+                "source": "docling",
+                "pages": page_count,
+            }
+        )
         document.page_count = page_count
         document.save(update_fields=["extracted_text", "page_count"])
 

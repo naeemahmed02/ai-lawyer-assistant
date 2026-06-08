@@ -56,9 +56,7 @@ class SemanticChunking:
             return []
 
         sentences = [
-            s.strip()
-            for s in re.split(r"(?<=[.!?])\s+", text)
-            if s and s.strip()
+            s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if s and s.strip()
         ]
 
         return sentences

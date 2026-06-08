@@ -64,9 +64,7 @@ class RAGPipeline:
 
     # Main rag entry
     async def run(
-        self,
-        query: str,
-        case_id: Optional[str] = None,
+        self, query: str, case_id: Optional[str] = None, history: Optional[list] = None
     ) -> dict:
 
         if not query or not query.strip():
@@ -117,7 +115,7 @@ class RAGPipeline:
             prompt = self.prompt_builder.build(
                 system_prompt=system_prompt,
                 user_message=user_message,
-                history=None,
+                history=history,
             )
 
             # Generate Answer
