@@ -1,28 +1,63 @@
-from typing import List
+from typing import List, Optional
 
 
 class ContextBuilder:
     """
-    Convert retrieval results into LMM  context.
+    Build structured context for the LLM from multiple sources.
+
+    Context sources:
+
+    - Conversation summary
+    - Semantic memories
+    - Qdrant retrieval results
     """
 
-    def _build_context(self, search_results) -> str:
+    def build(
+        self,
+        summary: Optional[str] = None,
+        memories: Optional[List[str]] = None,
+        search_results=None,
+    ) -> str:
         """
-        Convert Qdrant results into prompt context.
+        Build contextual information for the LLM.
+
+        Returns:
+            A formatted context string.
         """
 
-        if not search_results:
-            return ""
+        sections: List[str] = []
 
-        chunks: List[str] = []
+        # Conversation summary
+        if summary and summary.strip():
+            sections.append(f"## Conversation Summary\n{summary.strip()}")
 
-        for point in search_results:
+        # Semantic memories
+        if memories:
+            cleaned_memories = [
+                memory.strip() for memory in memories if memory and memory.strip()
+            ]
 
-            payload = point.payload or {}
+            if cleaned_memories:
+                sections.append(
+                    "## Relevant Previous Context\n"
+                    + "\n".join(f"- {memory}" for memory in cleaned_memories)
+                )
 
-            text = payload.get("text")
+        # Legal reference material from Qdrant
+        rag_chunks: List[str] = []
 
-            if text:
-                chunks.append(text)
+        if search_results:
 
-        return "\n\n".join(chunks)
+            for point in search_results:
+
+                payload = point.payload or {}
+
+                text = payload.get("text")
+
+                if text and text.strip():
+                    rag_chunks.append(text.strip())
+
+        if rag_chunks:
+            sections.append("## Legal Reference Material\n" + "\n\n".join(rag_chunks))
+
+        return "\n\n".join(sections)

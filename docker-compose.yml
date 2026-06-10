@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   django:
     build:
@@ -31,11 +29,36 @@ services:
       RAPIDOCR_MODEL_DIR: /models/rapidocr
 
     depends_on:
-      - redis
-      - qdrant
+      redis:
+        condition: service_started
+      qdrant:
+        condition: service_started
+      db:
+        condition: service_healthy # Waits for the DB healthcheck to pass
 
     networks:
       - ai_net
+
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: ai_lawyer_db
+    restart: always
+    environment:
+      POSTGRES_DB: lawyer_db
+      POSTGRES_USER: lawyer_admin
+      POSTGRES_PASSWORD: z0m1qpoz
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # Fixed the database name here to match POSTGRES_DB
+      test: [ "CMD-SHELL", "pg_isready -U lawyer_admin -d lawyer_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ai_net # Added this so Django/Celery can reach the DB
 
   celery:
     build:
@@ -62,8 +85,12 @@ services:
       RAPIDOCR_MODEL_DIR: /models/rapidocr
 
     depends_on:
-      - redis
-      - qdrant
+      redis:
+        condition: service_started
+      qdrant:
+        condition: service_started
+      db:
+        condition: service_healthy # Waits for the DB healthcheck to pass
 
     networks:
       - ai_net
@@ -94,3 +121,4 @@ volumes:
   qdrant_data:
   media_data:
   model_cache: # persistent ML model storage
+  postgres_data:

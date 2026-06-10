@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.db import DatabaseError
 from .conversation_service import ConversationService
-from .history_service import HistoryService
+from .history_service import RecentHistoryService
 from .rag_service import RagService
 
 
@@ -27,12 +27,10 @@ class LegalChatService:
                 default_model=self.DEFAULT_MODEL,
             )
 
-            history = HistoryService().build_history(conversation)
+            history = RecentHistoryService().get_recent(conversation)
 
             response = RagService().generate(
-                query=query,
-                case_id=case_id,
-                history=history,
+                query=query, case_id=case_id, conversation=conversation
             )
 
             ConversationService().save_messages(

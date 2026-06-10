@@ -1,5 +1,6 @@
-from ..rag.rag_pipeline import RAGPipeline
 from asgiref.sync import async_to_sync
+
+from ..rag.rag_pipeline import RAGPipeline
 from ...services.llm.exception import LLMGenerationError
 
 
@@ -10,15 +11,14 @@ class RagService:
         *,
         query,
         case_id,
-        history,
+        conversation,
     ):
-
         rag_pipeline = RAGPipeline()
 
         response = async_to_sync(rag_pipeline.run)(
             query=query,
             case_id=case_id,
-            history=history,
+            conversation=conversation,
         )
 
         if not response:

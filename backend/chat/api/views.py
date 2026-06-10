@@ -54,7 +54,7 @@ class CoversationViewSet(viewsets.ModelViewSet):
     serializer_class = ConversationSerializers
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self) -> QuerySet:
+    def get_queryset(self) -> QuerySet:  # type: ignore
         return Conversation.objects.filter(owner=self.request.user).all()
 
     def perform_create(self, serializer):
@@ -68,7 +68,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self) -> QuerySet:
+    def get_queryset(self) -> QuerySet:  # type: ignore
         return Message.objects.filter(conversation__owner=self.request.user)
 
     def perform_create(self, serializer):

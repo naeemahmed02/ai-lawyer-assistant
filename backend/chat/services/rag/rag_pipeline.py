@@ -1,49 +1,40 @@
 import logging
 from typing import Optional
-from .builders.context_builder import ContextBuilder
+
+from dataclasses import asdict
+
 from documents.services.vectorstore.qdrant_service import QdrantService
 from documents.services.embeddings.embedding_engine import EmbeddingEngine
 
 from ..llm.service import LLMService
 from ..llm.builders.prompt_builder import PromptBuilder
-from dataclasses import asdict
-from .prompts.system_prompt import system_prompt
+
+from .builders.context_builder import ContextBuilder
 from .builders.citation_builder import CitationBuilder
+
+from ..api_service.history_service import RecentHistoryService
+from ...models.conversation_summary import ConversationSummary
+from ..memory.semantic_memory_retrieval import MemoryRetriever
+
+from .prompts.system_prompt import system_prompt
 
 logger = logging.getLogger(__name__)
 
 
 class RAGPipeline:
     """
-    Production-grade Retrieval-Augmented Generation (RAG) pipeline for
-    legal research and question-answering applications.
+    Production-grade Legal RAG Pipeline.
 
-    The pipeline retrieves relevant legal documents from a vector database,
-    constructs grounded context, and generates accurate responses using
-    Gemini models. It is designed to provide traceable, context-aware,
-    and citation-friendly answers while minimizing hallucinations.
-
-    Key capabilities:
-        - Semantic search using Gemini embeddings.
-        - Legal document retrieval from Qdrant.
-        - Context aggregation and prompt optimization.
-        - Gemini-powered answer generation.
-        - Source attribution and citation support.
-        - Configurable retrieval and generation settings.
-        - Robust error handling, logging, and observability.
-
-    Attributes:
-        embedding_model: Embedding model used for query vectorization.
-        vector_store: Qdrant client for document retrieval.
-        llm: Gemini language model used for response generation.
-        retriever: Retrieval component responsible for document search.
-        prompt_builder: Utility for constructing generation prompts.
-        config: Runtime configuration for the pipeline.
-
-    Notes:
-        This pipeline is intended for legal assistance and research
-        workflows. Generated responses should be reviewed against
-        authoritative legal sources before professional use.
+    Responsibilities:
+    - Query embedding
+    - Semantic memory retrieval (pgvector)
+    - Recent conversation retrieval
+    - Conversation summary retrieval
+    - Legal document retrieval (Qdrant)
+    - Context assembly
+    - Prompt construction
+    - LLM inference
+    - Citation generation
     """
 
     def __init__(self):
@@ -52,91 +43,146 @@ class RAGPipeline:
             output_dimensionality=3072,
         )
 
-        self.qdrant_service = QdrantService(
-            vector_size=3072,
-        )
+        self.qdrant_service = QdrantService(vector_size=3072)
+
+        self.llm_service = LLMService()
 
         self.prompt_builder = PromptBuilder()
         self.context_builder = ContextBuilder()
         self.citation_builder = CitationBuilder()
 
-        self.llm_service = LLMService()
+        self.history_service = RecentHistoryService()
+        self.memory_retriever = MemoryRetriever()
 
-    # Main rag entry
+    # ----------------------------
+    # MAIN ENTRY
+    # ----------------------------
     async def run(
-        self, query: str, case_id: Optional[str] = None, history: Optional[list] = None
+        self,
+        query: str,
+        conversation,
+        case_id: Optional[str] = None,
     ) -> dict:
 
         if not query or not query.strip():
             raise ValueError("Query cannot be empty.")
 
+        query = query.strip()
+
         logger.info(
-            "Running RAG pipeline. case_id=%s",
+            "RAG pipeline started | conversation_id=%s | case_id=%s",
+            getattr(conversation, "id", None),
             case_id,
         )
 
         try:
-            # Embed Query
+            # -------------------------------------------------
+            # 1. Embed Query
+            # -------------------------------------------------
             query_vector = self.embedding_engine.embed(query)
-            print("EMBED TYPE:", type(query_vector))
 
             logger.debug(
-                "Generated query embedding (%s dimensions)",
+                "Query embedded | dims=%s",
                 len(query_vector),
             )
 
-            # Retrieve Relevant Chunks
+            # -------------------------------------------------
+            # 2. Retrieve Conversation Memory (semantic)
+            # -------------------------------------------------
+            memory_results = self.memory_retriever.get_relevant(
+                conversation=conversation,
+                query_embedding=query_vector,
+                top_k=3,
+            )
+
+            memories = [m.content for m in memory_results if m.content]
+
+            # -------------------------------------------------
+            # 3. Retrieve Conversation Summary
+            # -------------------------------------------------
+            summary_obj = (
+                ConversationSummary.objects.filter(conversation=conversation)
+                .only("summary")
+                .first()
+            )
+
+            summary = summary_obj.summary if summary_obj else ""
+
+            # -------------------------------------------------
+            # 4. Retrieve Recent History
+            # -------------------------------------------------
+            history = self.history_service.get_recent(conversation)
+
+            # -------------------------------------------------
+            # 5. Retrieve Legal Documents (Qdrant)
+            # -------------------------------------------------
             search_results = self.qdrant_service.search_with_filter(
                 query_vector=query_vector,
                 case_id=case_id,
                 limit=5,
             )
-            print("QDRANT TYPE:", type(search_results))
 
             logger.info(
-                "Retrieved %s chunks",
+                "Retrieved context | qdrant=%s | memories=%s | history=%s",
                 len(search_results),
+                len(memories),
+                len(history),
             )
 
-            # Build Context
-            context = self.context_builder._build_context(search_results)
+            # -------------------------------------------------
+            # 6. Build Structured Context
+            # -------------------------------------------------
+            context = self.context_builder.build(
+                summary=summary,
+                memories=memories,
+                search_results=search_results,
+            )
 
-            # Build Prompt
-            user_message = f"""
-                Context:
-
-                {context}
-
-                Question:
-
-                {query}
-            """
-
+            # -------------------------------------------------
+            # 7. Build Final Prompt
+            # -------------------------------------------------
             prompt = self.prompt_builder.build(
                 system_prompt=system_prompt,
-                user_message=user_message,
+                user_message=query,
                 history=history,
+                context=context,
             )
 
-            print(f"Prompt: {prompt}")
-
-            # Generate Answer
+            # -------------------------------------------------
+            # 8. LLM Call
+            # -------------------------------------------------
             answer = await self.llm_service.generate(
                 messages=prompt,
                 model_name="gemini-2.5-flash",
             )
-            print("ANSWER TYPE:", type(answer))
 
-            # build citations
+            # -------------------------------------------------
+            # 9. Citations
+            # -------------------------------------------------
             citations = self.citation_builder.build(search_results)
 
+            logger.info(
+                "RAG pipeline completed | conversation_id=%s",
+                getattr(conversation, "id", None),
+            )
+
+            # -------------------------------------------------
+            # 10. Response
+            # -------------------------------------------------
             return {
                 "query": query,
                 "answer": asdict(answer),
                 "citations": citations,
-                "retrieved_chunks": len(search_results),
+                "metrics": {
+                    "chunks_retrieved": len(search_results),
+                    "memories_retrieved": len(memories),
+                    "history_length": len(history),
+                },
             }
 
-        except Exception:
-            logger.exception("RAG pipeline execution failed.")
-            raise
+        except Exception as e:
+            logger.exception(
+                "RAG pipeline failed | conversation_id=%s",
+                getattr(conversation, "id", None),
+            )
+            raise RuntimeError(f"RAG pipeline error: {str(e)}") from e
