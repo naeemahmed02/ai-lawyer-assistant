@@ -17,6 +17,7 @@ from ...models.conversation_summary import ConversationSummary
 from ..memory.semantic_memory_retrieval import MemoryRetriever
 
 from .prompts.system_prompt import system_prompt
+from asgiref.sync import sync_to_async
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +55,7 @@ class RAGPipeline:
         self.history_service = RecentHistoryService()
         self.memory_retriever = MemoryRetriever()
 
-    # ----------------------------
-    # MAIN ENTRY
-    # ----------------------------
+    # Main entry
     async def run(
         self,
         query: str,
@@ -76,9 +75,7 @@ class RAGPipeline:
         )
 
         try:
-            # -------------------------------------------------
             # 1. Embed Query
-            # -------------------------------------------------
             query_vector = self.embedding_engine.embed(query)
 
             logger.debug(
@@ -86,36 +83,26 @@ class RAGPipeline:
                 len(query_vector),
             )
 
-            # -------------------------------------------------
-            # 2. Retrieve Conversation Memory (semantic)
-            # -------------------------------------------------
-            memory_results = self.memory_retriever.get_relevant(
+            memories = await sync_to_async(self.memory_retriever.get_relevant)(
                 conversation=conversation,
                 query_embedding=query_vector,
                 top_k=3,
             )
 
-            memories = [m.content for m in memory_results if m.content]
-
-            # -------------------------------------------------
-            # 3. Retrieve Conversation Summary
-            # -------------------------------------------------
-            summary_obj = (
-                ConversationSummary.objects.filter(conversation=conversation)
-                .only("summary")
-                .first()
-            )
+            summary_obj = await sync_to_async(
+                lambda: (
+                    ConversationSummary.objects.filter(conversation=conversation)
+                    .only("summary")
+                    .first()
+                )
+            )()
 
             summary = summary_obj.summary if summary_obj else ""
 
-            # -------------------------------------------------
             # 4. Retrieve Recent History
-            # -------------------------------------------------
-            history = self.history_service.get_recent(conversation)
+            history = await sync_to_async(self.history_service.get_recent)(conversation)
 
-            # -------------------------------------------------
             # 5. Retrieve Legal Documents (Qdrant)
-            # -------------------------------------------------
             search_results = self.qdrant_service.search_with_filter(
                 query_vector=query_vector,
                 case_id=case_id,
@@ -129,18 +116,14 @@ class RAGPipeline:
                 len(history),
             )
 
-            # -------------------------------------------------
             # 6. Build Structured Context
-            # -------------------------------------------------
             context = self.context_builder.build(
                 summary=summary,
                 memories=memories,
                 search_results=search_results,
             )
 
-            # -------------------------------------------------
             # 7. Build Final Prompt
-            # -------------------------------------------------
             prompt = self.prompt_builder.build(
                 system_prompt=system_prompt,
                 user_message=query,
@@ -148,17 +131,13 @@ class RAGPipeline:
                 context=context,
             )
 
-            # -------------------------------------------------
             # 8. LLM Call
-            # -------------------------------------------------
             answer = await self.llm_service.generate(
                 messages=prompt,
                 model_name="gemini-2.5-flash",
             )
 
-            # -------------------------------------------------
             # 9. Citations
-            # -------------------------------------------------
             citations = self.citation_builder.build(search_results)
 
             logger.info(
@@ -166,9 +145,7 @@ class RAGPipeline:
                 getattr(conversation, "id", None),
             )
 
-            # -------------------------------------------------
             # 10. Response
-            # -------------------------------------------------
             return {
                 "query": query,
                 "answer": asdict(answer),

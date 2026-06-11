@@ -7,7 +7,7 @@ class SummaryService:
     def __init__(self):
         self.llm_service = LLMService()
 
-    async def generate_summary(self, conversation) -> str:
+    def generate_summary(self, conversation) -> str:
 
         messages = Message.objects.filter(conversation=conversation).order_by(
             "-created_at"
@@ -30,7 +30,7 @@ class SummaryService:
             },
         ]
 
-        response = await self.llm_service.generate(
+        response = self.llm_service.generate(
             model_name="gemini-2.5-flash",
             messages=llm_messages,
         )

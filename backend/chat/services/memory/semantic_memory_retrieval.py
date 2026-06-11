@@ -7,8 +7,16 @@ class MemoryRetriever:
 
     def get_relevant(self, conversation, query_embedding, top_k):
 
-        return (
-            ConversationMemory.objects.filter(conversation=conversation)
-            .annotate(distance=CosineDistance("embedding", query_embedding))
-            .order_by("distance")[:top_k]
+        return list(
+            ConversationMemory.objects.filter(
+                conversation=conversation,
+            )
+            .annotate(
+                distance=CosineDistance(
+                    "embedding",
+                    query_embedding,
+                )
+            )
+            .order_by("distance")
+            .values_list("content", flat=True)[:top_k]
         )
