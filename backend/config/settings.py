@@ -65,6 +65,9 @@ REST_FRAMEWORK = {
         "anon": "100/day",
         "auth": "5/minute",
     },
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+    ],
 }
 
 import os
