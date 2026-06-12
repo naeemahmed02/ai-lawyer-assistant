@@ -44,7 +44,7 @@ class CaseViewSet(viewsets.ModelViewSet):
 
     ordering = ("-created_at",)
 
-    def get_queryset(self):
+    def get_queryset(self):  # type: ignore
         """
         Return only current user's cases.
         """
@@ -91,7 +91,7 @@ class PartyViewSet(viewsets.ModelViewSet):
 
     ordering = ("name",)
 
-    def get_queryset(self):
+    def get_queryset(self):  # type: ignore
         """
         Only parties belonging to
         cases owned by current user.

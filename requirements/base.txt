@@ -162,3 +162,4 @@ websockets==16.0
 xlsxwriter==3.2.9
 psycopg2-binary>=2.9.0
 pgvector>=0.2.0
+django-filter>=25.2

@@ -115,9 +115,7 @@ class Document(models.Model):
     keywords = models.JSONField(
         null=True,
         blank=True,
-        help_text=_(
-            "AI extracted keywords, entities, citations, and tags."
-        ),
+        help_text=_("AI extracted keywords, entities, citations, and tags."),
     )
 
     embedding_id = models.CharField(
@@ -125,9 +123,7 @@ class Document(models.Model):
         null=True,
         blank=True,
         db_index=True,
-        help_text=_(
-            "Reference ID for vector database embedding storage."
-        ),
+        help_text=_("Reference ID for vector database embedding storage."),
     )
 
     chunk_count = models.PositiveIntegerField(
@@ -146,17 +142,13 @@ class Document(models.Model):
     processing_error = models.TextField(
         null=True,
         blank=True,
-        help_text=_(
-            "Stores processing failure logs or exception messages."
-        ),
+        help_text=_("Stores processing failure logs or exception messages."),
     )
 
     is_vectorized = models.BooleanField(
         default=False,
         db_index=True,
-        help_text=_(
-            "Indicates whether embeddings were successfully generated."
-        ),
+        help_text=_("Indicates whether embeddings were successfully generated."),
     )
 
     # File Metadata
