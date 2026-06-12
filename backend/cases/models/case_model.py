@@ -1,5 +1,6 @@
 from django.db import models
 from accounts.models import Account
+import uuid
 
 
 class Case(models.Model):
@@ -15,6 +16,8 @@ class Case(models.Model):
         OPEN = "open"
         UNDER_REVIEW = "under_review"
         CLOSED = "closed"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
