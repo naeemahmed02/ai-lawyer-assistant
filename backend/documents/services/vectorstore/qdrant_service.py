@@ -55,10 +55,7 @@ class QdrantService:
         self._ensure_collection()
         self._create_payload_indexes()
 
-    # ------------------------------------------------------------------
     # HEALTH
-    # ------------------------------------------------------------------
-
     def _health_check(self) -> None:
         try:
             self.client.get_collections()
@@ -145,10 +142,7 @@ class QdrantService:
             logger.exception("Failed recreating collection.")
             raise
 
-    # ------------------------------------------------------------------
     # PAYLOAD INDEXES
-    # ------------------------------------------------------------------
-
     def _create_payload_indexes(self) -> None:
         indexed_fields = [
             "case_id",
@@ -174,10 +168,7 @@ class QdrantService:
                     exc,
                 )
 
-    # ------------------------------------------------------------------
     # IDS
-    # ------------------------------------------------------------------
-
     @staticmethod
     def _generate_point_id(
         chunk_id: str,
@@ -189,10 +180,7 @@ class QdrantService:
             )
         )
 
-    # ------------------------------------------------------------------
     # UPSERT
-    # ------------------------------------------------------------------
-
     def upsert_chunks(
         self,
         embeddings: List[List[float]],
@@ -286,10 +274,7 @@ class QdrantService:
                 logger.exception("Batch upsert failed.")
                 raise
 
-    # ------------------------------------------------------------------
     # FILTERS
-    # ------------------------------------------------------------------
-
     def build_filter(
         self,
         case_id: Optional[str] = None,
@@ -321,10 +306,7 @@ class QdrantService:
             must=conditions,
         )
 
-    # ------------------------------------------------------------------
     # SEARCH
-    # ------------------------------------------------------------------
-
     def search(
         self,
         query_vector: List[float],
@@ -372,10 +354,7 @@ class QdrantService:
             query_filter=query_filter,
         )
 
-    # ------------------------------------------------------------------
     # DELETE
-    # ------------------------------------------------------------------
-
     def delete_by_case(
         self,
         case_id: str,
