@@ -1,5 +1,6 @@
 from django.db import models
 from .case_model import Case
+import uuid
 
 
 class Party(models.Model):
@@ -9,6 +10,8 @@ class Party(models.Model):
         DEFENDANT = "defendant"
         PETITIONER = "petitioner"
         RESPONDENT = "respondent"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     case = models.ForeignKey(Case, on_delete=models.CASCADE, related_name="parties")
 
