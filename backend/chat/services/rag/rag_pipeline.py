@@ -123,12 +123,22 @@ class RAGPipeline:
                 search_results=search_results,
             )
 
+            formatted_context = [
+                {
+                    "src_id": f"SRC_{i+1}",
+                    "document_id": item["document_id"],
+                    "chunk_index": item["chunk_index"],
+                    "text": item["text"],
+                }
+                for i, item in enumerate(context)
+            ]
+
             # 7. Build Final Prompt
             prompt = self.prompt_builder.build(
                 system_prompt=system_prompt,
                 user_message=query,
                 history=history,
-                context=context,
+                context=formatted_context,
             )
 
             # 8. LLM Call
