@@ -80,9 +80,7 @@ class PromptBuilder:
                 }
             )
 
-        # ---------------------------------------------------------
         # 4. USER QUERY (CURRENT INPUT)
-        # ---------------------------------------------------------
         messages.append(
             {
                 "role": "user",
@@ -95,20 +93,16 @@ class PromptBuilder:
     # -------------------------------------------------------------
     # CONTEXT FORMATTING (CRITICAL FOR RAG SAFETY)
     # -------------------------------------------------------------
-    def _format_context(self, context: List[Dict[str, Any]]) -> str:
-        """
-        Convert retrieved chunks into deterministic citation-safe format.
-        """
-
+    def _format_context(self, context):
         blocks = []
 
-        for i, item in enumerate(context, 1):
-
+        for item in context:
+            src_id = item.get("src_id", "SRC_UNKNOWN")
             doc_id = item.get("document_id", "unknown_doc")
             chunk_id = item.get("chunk_index", "unknown_chunk")
             text = item.get("text", "").strip()
 
-            blocks.append(f"[SRC_{i} | doc:{doc_id} | chunk:{chunk_id}]\n" f"{text}")
+            blocks.append(f"[{src_id} | doc:{doc_id} | chunk:{chunk_id}]\n{text}")
 
         return "\n\n".join(blocks)
 
