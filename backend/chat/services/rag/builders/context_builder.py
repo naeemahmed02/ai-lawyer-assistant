@@ -21,9 +21,7 @@ class ContextBuilder:
 
         context: List[Dict[str, Any]] = []
 
-        # -------------------------------------------------------
         # 1. Conversation Summary
-        # -------------------------------------------------------
         if summary and summary.strip():
             context.append(
                 {
@@ -34,9 +32,7 @@ class ContextBuilder:
                 }
             )
 
-        # -------------------------------------------------------
         # 2. Semantic Memories
-        # -------------------------------------------------------
         if memories:
             for i, memory in enumerate(memories):
                 if not memory:
@@ -54,9 +50,7 @@ class ContextBuilder:
                         }
                     )
 
-        # -------------------------------------------------------
         # 3. Qdrant Search Results (MOST IMPORTANT)
-        # -------------------------------------------------------
         if search_results:
             for i, point in enumerate(search_results):
 

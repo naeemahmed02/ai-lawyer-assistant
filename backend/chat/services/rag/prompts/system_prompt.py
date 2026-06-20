@@ -70,7 +70,7 @@ CITATION RULES (STRICT)
 
 [SRC_1], [SRC_2], etc.
 
-❌ Forbidden:
+Forbidden:
 - Document Name
 - Page numbers
 - Section labels
