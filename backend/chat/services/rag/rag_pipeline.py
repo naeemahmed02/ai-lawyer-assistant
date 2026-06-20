@@ -18,6 +18,7 @@ from ..memory.semantic_memory_retrieval import MemoryRetriever
 
 from .prompts.system_prompt import system_prompt
 from asgiref.sync import sync_to_async
+from .utils import add_src_ids
 
 logger = logging.getLogger(__name__)
 
@@ -123,12 +124,25 @@ class RAGPipeline:
                 search_results=search_results,
             )
 
+            context_with_src = add_src_ids(context)
+
+            formatted_context = [
+                {
+                    "src_id": f"SRC_{i+1}",
+                    "document_id": item["document_id"],
+                    "chunk_index": item["chunk_index"],
+                    "text": item["text"],
+                }
+                for i, item in enumerate(context)
+            ]
+
             # 7. Build Final Prompt
             prompt = self.prompt_builder.build(
                 system_prompt=system_prompt,
                 user_message=query,
                 history=history,
-                context=context,
+                # context=formatted_context,
+                context=context_with_src,
             )
 
             # 8. LLM Call
@@ -138,7 +152,15 @@ class RAGPipeline:
             )
 
             # 9. Citations
-            citations = self.citation_builder.build(search_results)
+            # citations = self.citation_builder.build(search_results)
+            citations = [
+                {
+                    "src_id": item["src_id"],
+                    "document_id": item["document_id"],
+                    "chunk_index": item["chunk_index"],
+                }
+                for item in context_with_src
+            ]
 
             logger.info(
                 "RAG pipeline completed | conversation_id=%s",

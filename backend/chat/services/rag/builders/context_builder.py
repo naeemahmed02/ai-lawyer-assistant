@@ -1,63 +1,73 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 
 class ContextBuilder:
     """
-    Build structured context for the LLM from multiple sources.
+    Production-grade structured context builder for Legal RAG.
 
-    Context sources:
-
-    - Conversation summary
-    - Semantic memories
-    - Qdrant retrieval results
+    Output MUST remain structured (NO string flattening).
     """
 
     def build(
         self,
         summary: Optional[str] = None,
-        memories: Optional[List[str]] = None,
-        search_results=None,
-    ) -> str:
+        memories: Optional[List[Any]] = None,
+        search_results: Optional[List[Any]] = None,
+    ) -> List[Dict[str, Any]]:
         """
-        Build contextual information for the LLM.
-
         Returns:
-            A formatted context string.
+            List of structured context objects for PromptBuilder.
         """
 
-        sections: List[str] = []
+        context: List[Dict[str, Any]] = []
 
-        # Conversation summary
+        # 1. Conversation Summary
         if summary and summary.strip():
-            sections.append(f"## Conversation Summary\n{summary.strip()}")
+            context.append(
+                {
+                    "document_id": "conversation_summary",
+                    "chunk_index": 0,
+                    "text": summary.strip(),
+                    "source_type": "summary",
+                }
+            )
 
-        # Semantic memories
+        # 2. Semantic Memories
         if memories:
-            cleaned_memories = [
-                memory.strip() for memory in memories if memory and memory.strip()
-            ]
+            for i, memory in enumerate(memories):
+                if not memory:
+                    continue
 
-            if cleaned_memories:
-                sections.append(
-                    "## Relevant Previous Context\n"
-                    + "\n".join(f"- {memory}" for memory in cleaned_memories)
+                text = getattr(memory, "content", str(memory)).strip()
+
+                if text:
+                    context.append(
+                        {
+                            "document_id": "memory",
+                            "chunk_index": i,
+                            "text": text,
+                            "source_type": "memory",
+                        }
+                    )
+
+        # 3. Qdrant Search Results (MOST IMPORTANT)
+        if search_results:
+            for i, point in enumerate(search_results):
+
+                payload = getattr(point, "payload", {}) or {}
+
+                text = payload.get("text", "").strip()
+
+                if not text:
+                    continue
+
+                context.append(
+                    {
+                        "document_id": payload.get("document_id", "unknown_doc"),
+                        "chunk_index": payload.get("chunk_index", i),
+                        "text": text,
+                        "source_type": "qdrant",
+                    }
                 )
 
-        # Legal reference material from Qdrant
-        rag_chunks: List[str] = []
-
-        if search_results:
-
-            for point in search_results:
-
-                payload = point.payload or {}
-
-                text = payload.get("text")
-
-                if text and text.strip():
-                    rag_chunks.append(text.strip())
-
-        if rag_chunks:
-            sections.append("## Legal Reference Material\n" + "\n\n".join(rag_chunks))
-
-        return "\n\n".join(sections)
+        return context
