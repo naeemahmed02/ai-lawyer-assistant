@@ -16,9 +16,7 @@ class PromptBuilder:
 
     ALLOWED_ROLES = {"system", "user", "assistant", "tool"}
 
-    # -------------------------------------------------------------
     # PUBLIC API
-    # -------------------------------------------------------------
     def build(
         self,
         system_prompt: str,
@@ -35,9 +33,7 @@ class PromptBuilder:
 
         messages: List[Dict[str, str]] = []
 
-        # ---------------------------------------------------------
         # 1. SYSTEM INSTRUCTIONS (STATIC BEHAVIOR)
-        # ---------------------------------------------------------
         if system_prompt and system_prompt.strip():
             messages.append(
                 {
@@ -46,9 +42,7 @@ class PromptBuilder:
                 }
             )
 
-        # ---------------------------------------------------------
         # 2. STRUCTURED CONTEXT (RAG EVIDENCE LAYER)
-        # ---------------------------------------------------------
         if context:
             formatted_context = self._format_context(context)
 
@@ -67,9 +61,7 @@ class PromptBuilder:
                 }
             )
 
-        # ---------------------------------------------------------
         # 3. CONVERSATION HISTORY (OPTIONAL MEMORY)
-        # ---------------------------------------------------------
         for message in history or []:
             self._validate_message(message)
 
@@ -90,9 +82,7 @@ class PromptBuilder:
 
         return messages
 
-    # -------------------------------------------------------------
     # CONTEXT FORMATTING (CRITICAL FOR RAG SAFETY)
-    # -------------------------------------------------------------
     def _format_context(self, context):
         blocks = []
 
@@ -106,9 +96,7 @@ class PromptBuilder:
 
         return "\n\n".join(blocks)
 
-    # -------------------------------------------------------------
     # VALIDATION
-    # -------------------------------------------------------------
     def _validate_message(self, message: Dict[str, Any]) -> None:
 
         if not isinstance(message, dict):
